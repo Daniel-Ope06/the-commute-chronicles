@@ -34,7 +34,7 @@ knitr::opts_chunk$set(fig.pos="H", out.extra="")
 
 ```{r loadData}
 df <- read.csv("bus_trip_data.csv")
-df$date <- as.Date(df$date) # Convert date to a format suitable for R
+df$date <- as.Date(df$date) # Convert date column to R Date type
 ```
 
 The data has `r ncol(df)` columns and `r nrow(df)` rows. To ensure the table fits within the document margins, the data set is displayed below in two parts: the "To Campus" details and the "To Home" details.
