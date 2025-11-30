@@ -8,7 +8,7 @@ output:
     toc: true
     toc_depth: 3
     number_sections: true
-    highlight: tango
+    highlight: pygments
     df_print: kable
     extra_dependencies: ["float"]
 fontsize: 11pt
@@ -34,19 +34,19 @@ knitr::opts_chunk$set(fig.pos="H", fig.showtext = TRUE, out.extra="", dev="cairo
 ### Dataset Overview
 
 ```{r loadData}
-df <- read.csv("bus_trip_data.csv")
-df$date <- as.Date(df$date) # Convert date column to R Date type
+bus_data <- read.csv("bus_trip_data.csv")
+bus_data$date <- as.Date(bus_data$date) # Convert date column to R Date type
 ```
 
-The data has `r ncol(df)` columns and `r nrow(df)` rows. To ensure the table fits within the document margins, the data set is displayed below in two parts: the "To Campus" details and the "To Home" details.
+The data has `r ncol(bus_data)` columns and `r nrow(bus_data)` rows. To ensure the table fits within the document margins, the data set is displayed below in two parts: the "To Campus" details and the "To Home" details.
 
 ```{r display-table-1, echo=FALSE}
-df_display_1 <- df[ , 1:5]
+df_display_1 <- bus_data[ , 1:5]
 head(df_display_1, 1)
 ```
 
 ```{r display-table-2, echo=FALSE}
-df_display_2 <- df[ , 6:10]
+df_display_2 <- bus_data[ , 6:10]
 head(df_display_2, 1)
 ```
 
@@ -63,16 +63,17 @@ Before running any complex statistical tests, we visualize the raw data to under
 ```{r histogram-side, echo=FALSE, fig.show="hold", out.width="50%", fig.cap="Histograms displaying the distribution of travel times for trips to campus (left) and trips to home (right) with 10-minute bin intervals."}
 par(mar = c(4, 4, 1, .1))
 
-hist(df$dur_to_campus, 
+hist(bus_data$dur_to_campus, 
      main = "Distribution of Commute Duration to Campus",
      xlab = "Duration (Minutes)", 
      col = "lightblue", 
      border = "white",
      breaks = 10)
 
-hist(df$dur_to_home,
+hist(bus_data$dur_to_home,
      main = "Distribution of Commute Duration to Home",
-     xlab = "Duration (Minutes)", 
+     xlab = "Duration (Minutes)",
+     ylab = "", # No Y label needed on 2nd plot
      col = "salmon", 
      border = "white",
      breaks = 10)
@@ -88,7 +89,7 @@ An examination of the distributional shape (Figure \@ref(fig:histogram-side)) hi
 ```{r scatter-plot-side, echo=FALSE, fig.show="hold", out.width="50%", fig.cap="Scatter plots tracking daily commute durations for trips to campus (left) and return trips to home (right) over the observed period."}
 par(mar = c(4, 4, 1, .1))
 
-plot(df$date, df$dur_to_campus,
+plot(bus_data$date, bus_data$dur_to_campus,
      main = "Commute Duration Over Time To Campus",
      xlab = "Date",
      ylab = "Duration (Minutes)",
@@ -96,10 +97,10 @@ plot(df$date, df$dur_to_campus,
      col = "lightblue",
      frame.plot = FALSE)
 
-plot(df$date, df$dur_to_home,
+plot(bus_data$date, bus_data$dur_to_home,
      main = "Commute Duration Over Time To Home",
      xlab = "Date",
-     ylab = "Duration (Minutes)",
+     ylab = "", # No Y label needed on 2nd plot
      pch = 19,
      col = "salmon",
      frame.plot = FALSE)
@@ -111,9 +112,9 @@ Plotting the commute durations over time (Figure \@ref(fig:scatter-plot-side)) h
 
 - Trips to home exhibit high variance, with widely dispersed data points, suggesting unpredictable delays that warrant further statistical testing.
 
-```{r stacked-bar-side, echo=FALSE, fig.cap="Stacked bar chart showing the proportion of crowded UniLink buses to home during clear weather versus rain.", out.width="70%", fig.align="center"}
+```{r stacked-bar-side, echo=FALSE, fig.show="hold", fig.cap="Stacked bar chart showing the proportion of crowded UniLink buses to home during clear weather versus rain.", out.width="70%", fig.align="center"}
 # 'Rain' on the X-axis and 'Crowded' stacked as the bars
-counts <- table(df$crowded_unilink_to_home, df$rain_to_home)
+counts <- table(bus_data$crowded_unilink_to_home, bus_data$rain_to_home)
 
 # Rename the rows & cols for a cleaner plot text
 colnames(counts) <- c("No Rain", "Rain")
@@ -196,7 +197,7 @@ This is not a hypothesis test for statistical significance, but a Probability Up
 
 ### Difference in Commute Durations
 
-To determine if the journey home is statistically longer than the journey to campus, we performed a **paired t-test**. This controls for day-specific traffic conditions by comparing the two specific trips made on each date.
+To determine if the journey home is statistically longer than the journey to campus, we perform a **paired t-test**. This controls for day-specific traffic conditions by comparing the two specific trips made on each date.
 
 $$
 \begin{aligned}
@@ -205,14 +206,111 @@ H_a &: \mu_{home} > \mu_{campus}
 \end{aligned}
 $$
 
-```{r paired-t-test, collapse = TRUE, comment = "#>"}
-t_result <- t.test(df$dur_to_home, df$dur_to_campus,
+```{r paired-t-test, echo = TRUE, results = "hide"}
+t_result <- t.test(bus_data$dur_to_home, bus_data$dur_to_campus,
                    paired = TRUE, alternative = "greater")
 t_result
 ```
 
-The test yields a **p-value of `r signif(t_result$p.value, 4)`**.
+```{r display-t-test, echo=FALSE}
+stats_table <- data.frame(
+  "T_Statistic" = round(t_result$statistic, 2),
+  "Degrees_of_Freedom"          = round(t_result$parameter, 0),
+  "p_Value"     = format.pval(t_result$p.value, digits = 3),
+  "Mean_Difference"   = paste(round(t_result$estimate, 1), "min")
+)
+
+knitr::kable(stats_table, align = "c") # Center align the columns
+```
+
+
+The test yields a **p-value of `r signif(t_result$p.value, 3)`**.
 
 - **Decision:** Since the p-value is **greater** than the significant level ($\alpha = 0.05$), we **fail to reject** the null hypothesis.
 
 - **Interpretation:** There is **insufficient** evidence to conclude that the trip back home takes significantly longer than the trip to campus.
+
+### Predictability of Arrival Times
+
+We use **Linear Regression** to assess how accurately the *departure time* predicts the *arrival time*.
+
+```{r prep-regression, echo = TRUE, results = "hide"}
+# Combine the departure times and arrival times for campus and home trips
+all_dep <- c(bus_data$dep_to_campus, bus_data$dep_to_home)
+all_arr <- c(bus_data$arr_to_campus, bus_data$arr_to_home)
+
+# Convert Strings to POSIXct (Date-Time objects)
+# We use a dummy date so R sees them as times on the same timeline
+dep_time <- as.POSIXct(all_dep, format="%I:%M:%S %p")
+arr_time <- as.POSIXct(all_arr, format="%I:%M:%S %p")
+
+# Calculate the Linear Model
+fit <- lm(as.numeric(arr_time) ~ as.numeric(dep_time))
+fit
+```
+
+```{r display-fit, echo=FALSE}
+coefs <- summary(fit)$coefficients
+rownames(coefs) <- c("Intercept (Unix Epoch)", "Departure Time")
+knitr::kable(coefs, digits = 4)
+rm(coefs)
+```
+
+
+
+We modeled the relationship using the linear equation:
+$$
+\text{Arrival} = A + B(\text{Departure}) + \epsilon
+$$
+
+Validating this model against the data reveals:
+
+- **Intercept ($A$):** Omitted since `POSIXct` data is stored as seconds since 1970. It holds no practical meaning for this daily commute analysis.
+
+- **Slope ($B$):** The slope is `r round(coef(fit)[2], 3)`, indicating an almost 1-to-1 relationship. For every minute you leave later, you arrive approximately one minute later.
+
+- **Error Margin ($\epsilon$):** The typical deviation from the predicted arrival time is `r round(summary(fit)$sigma / 60, 1)` minutes (Residual Standard Error).
+
+- **Predictive Power ($R^2$):** The model explains `r round(summary(fit)$r.squared * 100, 1)`% of the variance in arrival times.
+
+
+```{r linear-regression-side, echo=FALSE, fig.show="hold", out.width="50%", fig.cap="Regression analysis of commute times. The left panel displays all departure vs. all arrival times, colored by direction (Blue: To Campus, Pink: To Home). The right panel overlays the linear regression model (black line), indicating a strong predictive relationship."}
+# Assign Colors based on Source
+# First half is Campus (Light blue), Second half is Home (Salmon)
+point_colors <- c(rep("lightblue", nrow(bus_data)), rep("salmon", nrow(bus_data)))
+
+# Setup Split View
+par(mar = c(4, 4, 1, .1))
+
+# --- PLOT 1: Scatter Plot Only ---
+plot(arr_time ~ dep_time,
+     main = "Observed Commute Times",
+     xlab = "Departure Time", ylab = "Arrival Time",
+     pch = 19, col = point_colors,
+     axes = FALSE) # Hide default axes
+
+# Draw custom axes
+axis.POSIXct(1, dep_time, format="%H:%M")
+axis.POSIXct(2, arr_time, format="%H:%M", las=1)
+box() # Adds box frame back around plot
+
+# --- PLOT 2: With Regression Line ---
+plot(arr_time ~ dep_time,
+     main = "Linear Model Fit",
+     xlab = "Departure Time", ylab = "", # No Y label needed on 2nd plot
+     pch = 19, col = point_colors,
+     axes = FALSE)
+
+axis.POSIXct(1, dep_time, format="%H:%M")
+axis.POSIXct(2, arr_time, format="%H:%M", las=1)
+box()
+
+# Add the regression line
+abline(fit, col = "black", lwd = 2)
+```
+
+
+```{r delete-regression-variables, include=FALSE}
+# Remove them to keep the environment clean
+rm(all_dep, all_arr, dep_time, arr_time, point_colors)
+```
