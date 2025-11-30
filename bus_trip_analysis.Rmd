@@ -8,7 +8,7 @@ output:
     toc: true
     toc_depth: 3
     number_sections: true
-    highlight: pygments
+    highlight: tango
     df_print: kable
     extra_dependencies: ["float"]
 fontsize: 11pt
@@ -136,7 +136,7 @@ An analysis of the interaction between weather and bus capacity (Figure \@ref(fi
 
 - **On rainy days**, the vast majority of trips experience overcrowding, likely due to an increase in students choosing public transport over walking or cycling.
 
-## Hypothesis Testing and Methodology
+## Statistical Analysis Plan
 
 While the exploratory analysis highlighted potential trends, such as the volatility of the evening commute and the correlation between rain and crowding, visual inspection alone is insufficient to draw firm conclusions. In this section, we define the specific hypotheses derived from our observations and outline the statistical methods selected to test them.
 
@@ -192,4 +192,27 @@ This is not a hypothesis test for statistical significance, but a Probability Up
 
 - If $P(Crowded|Rain) > P(Crowded)$, the events are **Dependent**, and rain acts as a positive risk factor.
 
+## Results and Interpretation
 
+### Difference in Commute Durations
+
+To determine if the journey home is statistically longer than the journey to campus, we performed a **paired t-test**. This controls for day-specific traffic conditions by comparing the two specific trips made on each date.
+
+$$
+\begin{aligned}
+H_0 &: \mu_{home} = \mu_{campus} \\
+H_a &: \mu_{home} > \mu_{campus}
+\end{aligned}
+$$
+
+```{r paired-t-test, collapse = TRUE, comment = "#>"}
+t_result <- t.test(df$dur_to_home, df$dur_to_campus,
+                   paired = TRUE, alternative = "greater")
+t_result
+```
+
+The test yields a **p-value of `r signif(t_result$p.value, 4)`**.
+
+- **Decision:** Since the p-value is **greater** than the significant level ($\alpha = 0.05$), we **fail to reject** the null hypothesis.
+
+- **Interpretation:** There is **insufficient** evidence to conclude that the trip back home takes significantly longer than the trip to campus.
