@@ -27,28 +27,34 @@ knitr::opts_chunk$set(fig.pos="H", fig.showtext = TRUE, out.extra="", dev="cairo
 
 # Introduction
 
-# Methods and Results
+For any university student, time is a limited and valuable resource. However, my geographical situation presents a significant challenge: I spend about four hours each day commuting. This adds up to twenty hours a week in transit (equivalent to a part-time job) and creates a considerable gap in my efficiency. Due to the discomfort of the journey, I cannot effectively use this time for studying, making my commute a "dead zone" in terms of productivity.
 
-## Exploratory Data Analysis
+The motivation for this project is to reclaim agency over my travel time. Due to overcrowding, particularly on Thursdays, buses often bypass stops, leaving passengers stranded. I aim to shift from passive waiting to active management by analysing my travel logs to identify patterns, assess the impact of weather on crowding, and deduce actionable insights to optimise my journeys.
 
-### Dataset Overview
+```{r bus-trip-origin, echo=FALSE, fig.show="hold", fig.align='center', out.width="90%", fig.cap="Data Collection Source. The composite image shows the physical bus stop (left), the Google Maps route of the journey (center), and the notepad app used to manually log daily trip details (right)."}
+knitr::include_graphics("bus_trip_origin.jpg")
+```
+
+## Dataset Description
+
+The dataset for this analysis is a manually logged primary source, detailing each day's trip to campus and back home. The dataset tracks departure and arrival times, duration in minutes, and binary environmental indicators like rain and bus crowding.
 
 ```{r loadData}
 bus_data <- read.csv("bus_trip_data.csv")
 bus_data$date <- as.Date(bus_data$date) # Convert date column to R Date type
 ```
 
-The data has `r ncol(bus_data)` columns and `r nrow(bus_data)` rows. To ensure the table fits within the document margins, the data set is displayed below in two parts: the "To Campus" details and the "To Home" details.
+The data has `r ncol(bus_data)` columns and `r nrow(bus_data)` rows. To ensure the table fits within the document margins, the data set is displayed below in two parts: the *"To Campus"* details and the *"To Home"* details.
 
 \begin{center}
 ```{r display-table-1, echo=FALSE}
 df_display_1 <- bus_data[ , 1:5]
-knitr::kable(head(df_display_1, 2), booktabs = TRUE)
+knitr::kable(head(df_display_1, 5), booktabs = TRUE)
 ```
 
 ```{r display-table-2, echo=FALSE}
 df_display_2 <- bus_data[ , 6:10]
-knitr::kable(head(df_display_2, 2), booktabs = TRUE)
+knitr::kable(head(df_display_2, 5), booktabs = TRUE)
 ```
 \end{center}
 
@@ -57,7 +63,9 @@ knitr::kable(head(df_display_2, 2), booktabs = TRUE)
 rm(df_display_1, df_display_2)
 ```
 
-### Visual Inspection of Trends
+# Methods and Results
+
+## Exploratory Data Analysis
 
 Before running any complex statistical tests, we visualize the raw data to understand its shape. We are looking for two things: the **distribution** of the data (e.g. is it bell-shaped?) and any **trends** over time (e.g. is traffic getting worse?).
 
@@ -273,7 +281,7 @@ $$
 
 Validating this model against the data reveals:
 
-- **Decision:** Since the slope is not zero, we **reject the null hypothesis**. Arrival time is dependent on departure time.
+- **Decision:** Since the slope is not zero, we **reject the null hypothesis**. There is evidence that arrival time is dependent on departure time.
 
 - **Intercept ($A$):** Omitted since `POSIXct` data is stored as seconds since 1970. It holds no practical meaning for this daily commute analysis.
 
@@ -468,7 +476,7 @@ risk_factor <- p_posterior / p_H
 
 To visualize this update, we model our belief as a **Beta Distribution**. The *Prior (Blue)* represents our uncertainty before checking the weather, while the *Posterior (Pink)* shows how the presence of rain shifts our expectation toward "Crowded."
 
-```{r beta-distribution, fig.show="hold", out.width="70%", fig.align="center", fig.cap="Beta density plots showing the shift in belief. The Prior (blue dashed) represents the baseline probability of overcrowding across all days. The Posterior (pink solid) shows the updated probability given rainy weather, illustrating a significant increase in the risk of crowding."}
+```{r beta-distribution, fig.show="hold", out.width="70%", fig.align="center", fig.cap="Beta distribution plots showing the shift in belief. The Prior (blue dashed) represents the baseline probability of overcrowding across all days. The Posterior (pink solid) shows the updated probability given rainy weather, illustrating a significant increase in the risk of crowding."}
 # We need counts for alpha/beta parameters
 total_trips <- nrow(bus_data)
 crowded_trips <- sum(bus_data$crowded_unilink_to_home) # TRUE is 1, FALSE is 0
@@ -528,12 +536,12 @@ While the analysis reveals clear trends, several limitations should be considere
 
 ## Final Thoughts
 
-The *"Commute Chronicles"* started as a simple record of daily travel but grew into a story about reliability versus chaos. The data shows that the morning commute follows fixed routines and is mostly predictable, while the evening commute needs flexible planning.
+*The Commute Chronicles* started as a simple record of daily travel but grew into a story about reliability versus chaos. The data shows that the morning commute follows fixed routines and is mostly predictable, while the evening commute needs flexible planning.
 
 For the remainder of the semester:
 
 - Go home earlier on Thursdays to avoid the systematic rush.
 
-- Treat a rainy forecast as a definitive signal to prepare for a crowded journey.
+- Treat a rainy forecast as a signal to prepare for a crowded journey.
 
-This project demonstrated that even small, personal datasets can provide actionable insights when we analyze them carefully with statistics.
+This project demonstrates that even small, personal datasets can provide actionable insights when we analyze them carefully with statistics.
