@@ -40,6 +40,7 @@ bus_data$date <- as.Date(bus_data$date) # Convert date column to R Date type
 
 The data has `r ncol(bus_data)` columns and `r nrow(bus_data)` rows. To ensure the table fits within the document margins, the data set is displayed below in two parts: the "To Campus" details and the "To Home" details.
 
+\begin{center}
 ```{r display-table-1, echo=FALSE}
 df_display_1 <- bus_data[ , 1:5]
 knitr::kable(head(df_display_1, 2), booktabs = TRUE)
@@ -49,7 +50,7 @@ knitr::kable(head(df_display_1, 2), booktabs = TRUE)
 df_display_2 <- bus_data[ , 6:10]
 knitr::kable(head(df_display_2, 2), booktabs = TRUE)
 ```
-
+\end{center}
 
 ```{r delete-display-variables, include=FALSE}
 # Remove them to keep the environment clean
@@ -133,9 +134,9 @@ rm(counts)
 
 An analysis of the interaction between weather and bus capacity (Figure \@ref(fig:stacked-bar-side)) suggests a strong correlation:
 
-- **On clear days**, the distribution is balanced, with the bus being crowded roughly half the time.
+- **On clear days**, most of the trips are not crowded.
 
-- **On rainy days**, the vast majority of trips experience overcrowding, likely due to an increase in students choosing public transport over walking or cycling.
+- **On rainy days**, majority of the trips experience overcrowding, likely due to an increase in students choosing public transport over walking or cycling.
 
 ## Statistical Analysis Plan
 
@@ -211,7 +212,7 @@ t_result <- t.test(bus_data$dur_to_home, bus_data$dur_to_campus,
                    paired = TRUE, alternative = "greater")
 t_result
 ```
-
+\begin{center}
 ```{r display-t-test, echo=FALSE}
 stats_table <- data.frame(
   "T_Statistic" = round(t_result$statistic, 2),
@@ -219,10 +220,10 @@ stats_table <- data.frame(
   "p_Value"     = format.pval(t_result$p.value, digits = 3),
   "Mean_Difference"   = paste(round(t_result$estimate, 1), "min")
 )
-
 knitr::kable(stats_table, align = "c", booktabs = TRUE) # Center align the columns
+rm(stats_table)
 ```
-
+\end{center}
 
 The test yields a **p-value of `r signif(t_result$p.value, 3)`**.
 
@@ -256,14 +257,14 @@ fit <- lm(as.numeric(arr_time) ~ as.numeric(dep_time))
 fit
 ```
 
+\begin{center}
 ```{r display-fit, echo=FALSE}
 coefs <- summary(fit)$coefficients
 rownames(coefs) <- c("Intercept (Unix Epoch)", "Departure Time")
 knitr::kable(coefs, digits = 4, booktabs = TRUE)
 rm(coefs)
 ```
-
-
+\end{center}
 
 We modeled the relationship using the linear equation:
 $$
@@ -342,16 +343,18 @@ colnames(contingency_table) <- c("Not Crowded", "Crowded")
 contingency_table
 ```
 
+\begin{center}
 ```{r display-contingency-table, echo=FALSE}
 knitr::kable(contingency_table, booktabs = TRUE)
 ```
-
+\end{center}
 
 ```{r fisher-test, echo = TRUE, results = "hide"}
 fisher_result <- fisher.test(contingency_table, alternative = "greater")
 fisher_result
 ```
 
+\begin{center}
 ```{r display-fisher-test, echo=FALSE}
 fisher_stats <- data.frame(
   "Odds_Ratio" = round(fisher_result$estimate, 2),
@@ -359,13 +362,17 @@ fisher_stats <- data.frame(
   row.names    = NULL # Removes row numbers for a cleaner look
 )
 knitr::kable(fisher_stats, booktabs = TRUE, align = "c")
+rm(fisher_stats)
 ```
+\end{center}
 
-- **Decision:** Since the p-value (`r fisher_stats$p_Value`) is less than 0.05, we **reject the null hypothesis**.
 
-- **Interpretation:** The data indicates that rain significantly impacts commute comfort. The odds ratio suggests that a crowded bus is approximately **`r round(fisher_stats$Odds_Ratio, 1)` times** more likely to occur on a rainy day than on a clear day.
 
-### Testing the "Thursday Rush": Weekday vs. Crowding
+- **Decision:** Since the p-value (`r format.pval(fisher_result$p.value, digits = 3)`) is less than 0.05, we **reject the null hypothesis**.
+
+- **Interpretation:** The data indicates that rain significantly impacts commute comfort. The odds ratio suggests that a crowded bus is approximately **`r round(fisher_result$estimate, 1)` times** more likely to occur on a rainy day than on a clear day.
+
+### Testing the "Thursday Rush"
 
 To investigate the "Thursday Rush," we perform a **Pearson’s Chi-square Test** to check if bus crowding is dependent on the specific day of the week.
 
@@ -387,28 +394,31 @@ rownames(contingency_table_chi) <- c("Not Crowded", "Crowded")
 contingency_table_chi
 ```
 
+\begin{center}
 ```{r display-chi-table, echo=FALSE}
 knitr::kable(contingency_table_chi, booktabs = TRUE)
 rm(days)
 ```
+\end{center}
 
 ```{r chi-test, echo = TRUE, results = "hide"}
 chi_result <- chisq.test(contingency_table_chi, simulate.p.value = TRUE)
 chi_result
 ```
 
+\begin{center}
 ```{r display-chi-test, echo=FALSE}
 chi_stats <- data.frame(
   "Chi_Square" = round(chi_result$statistic, 2),
   "p_Value"    = format.pval(chi_result$p.value, digits = 3),
   row.names    = NULL
-)
+  )
 knitr::kable(chi_stats, booktabs = TRUE, align = "c")
+rm(chi_stats)
 ```
+\end{center}
 
-The analysis yields a p-value of `r signif(chi_result$p.value, 3)`, which is less than $0.05$.
-
-- **Decision:** We **reject the null hypothesis**.
+- **Decision:** Since the p-value (`r signif(chi_result$p.value, 3)`) is less than $0.05$, we **reject the null hypothesis**.
 
 - **Interpretation:** There is significant evidence to support the claim that specific days are inherently more crowded.
 
