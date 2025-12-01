@@ -148,7 +148,7 @@ The scatter plot (Figure \@ref(fig:scatter-plot-side)) suggested that the journe
 
 #### Method Justification:{.unnumbered}
 
-Since each day (or record) consists of a trip to campus and a trip to home, a paired student t-test is the appropriate method to control for day-specific variance (e.g., a generally traffic-heavy day affecting both trips).
+Since each day (or record) consists of a trip to campus and a trip to home, a paired student t-test is the appropriate method to control for day-specific variance (e.g., a generally traffic-heavy day affecting both trips). We use a *one-sided* test because the journey home is expected to take longer, as it typically occurs later in the day when more people are outside.
 
 - $H_0$ (Null): There is no significant difference in mean duration between the trip to campus and the trip home ($\mu_{campus} = \mu_{home}$).
 
@@ -164,7 +164,7 @@ We use *Simple Linear Regression* to quantify the relationship between the indep
 
 ### The "Rain Effect" on Crowding (Fisher's Exact Test)
 
-The bar chart (Figure \@ref(fig:stacked-bar-side)) indicated a strong dependency between rainy weather and bus overcrowding. We aim to calculate the statistical significance of this association.
+The bar chart (Figure \@ref(fig:stacked-bar-side)) indicated a strong dependency between rainy weather and bus overcrowding. We aim to calculate the statistical significance of this association. We use a one-sided test because we anticipate that rain will increase the likelihood of overcrowding.
 
 #### Method Justification:{.unnumbered}
 
@@ -495,6 +495,45 @@ legend("topleft", legend = c("Posterior (rain)", "Prior (general)"),
        col = c("salmon", "lightblue"), lwd = 3, lty = c(1, 2), bty = "n")
 ```
 
+# Conclusion
 
+This project set out to analyse the reliability and comfort of my school commute using a data-driven approach. By applying a statistical tests to personal bus logs, we have moved beyond anecdotal evidence to identify distinct patterns in travel efficiency and bus overcrowding.
 
+## Summary of Statistical Findings
 
+The following table summarizes the core hypotheses tested and the conclusions drawn from the data:
+
+\begingroup
+\renewcommand{\arraystretch}{2.0}
+| **Research Question** | **Method** | **Key Result** |
+|:---|:---:|:---|
+| **Is the journey home longer than the journey to campus?** | Paired t-test | **No.** Both trips take similar times. |
+| **Can we accurately predict arrival time based on departure?** | Linear Regression | **Yes.** A strong linear relationship exists ($R^2 \approx 0.996$), but random traffic noise creates a residual error of $\pm 15$ minutes regardless of departure time. |
+| **Does rain lead to overcrowding?** | Fisher's Exact Test | **Yes.** Rain is a significant predictor of crowding. The odds of a full bus increase dramatically during adverse weather. |
+| **Is overcrowding random across the week?** | Pearson's Chi-Square | **No.** Crowding is systematic and dependent on the day. Thursdays showed a disproportionate frequency of crowded trips compared to the rest of the week. |
+| **How much should I worry about rain?** | Bayes's Theorem | **Double the Risk.** The presence of rain acts as a risk multiplier ($1.92\times$), shifting the probability of a crowded bus from a baseline ($0.4$) to a near-certainty ($0.77$). |
+\endgroup
+
+## Limitations and Areas for Concern
+
+While the analysis reveals clear trends, several limitations should be considered when interpreting the results:
+
+- **Sample Size:** The dataset consists of only 30 observations (days), which is sufficient for initial hypothesis testing. However, a larger sample size ($n > 100$) would provide more robust estimates, particularly for the Pearson's Chi-square test of individual days.
+
+- **University Timetables:** The Chi-square analysis assumes *"Day of the Week"* is the primary factor for crowding. However, the university's lecture schedule (e.g., a large class finishing at 6 PM on Thursdays) likely acts as a hidden variable driving the *"Thursday Rush"*.
+
+- **Seasonality:** Data was collected over a single semester. Seasonal changes (winter darkness, exam periods) may alter these patterns, meaning the regression model may need re-calibration for future months.
+
+- **Binary Definition of "Crowded":** The variable `crowded_unilink_to_home` is subjective (`TRUE`/`FALSE`). A more granular metric (e.g., "Seats Available") would allow for more detailed analysis.
+
+## Final Thoughts
+
+The *"Commute Chronicles"* started as a simple record of daily travel but grew into a story about reliability versus chaos. The data shows that the morning commute follows fixed routines and is mostly predictable, while the evening commute needs flexible planning.
+
+For the remainder of the semester:
+
+- Go home earlier on Thursdays to avoid the systematic rush.
+
+- Treat a rainy forecast as a definitive signal to prepare for a crowded journey.
+
+This project demonstrated that even small, personal datasets can provide actionable insights when we analyze them carefully with statistics.
