@@ -42,12 +42,12 @@ The data has `r ncol(bus_data)` columns and `r nrow(bus_data)` rows. To ensure t
 
 ```{r display-table-1, echo=FALSE}
 df_display_1 <- bus_data[ , 1:5]
-head(df_display_1, 1)
+knitr::kable(head(df_display_1, 2), booktabs = TRUE)
 ```
 
 ```{r display-table-2, echo=FALSE}
 df_display_2 <- bus_data[ , 6:10]
-head(df_display_2, 1)
+knitr::kable(head(df_display_2, 2), booktabs = TRUE)
 ```
 
 
@@ -126,7 +126,7 @@ barplot(counts,
         ylab = "Number of Trips",
         col = c("lightblue", "salmon"),
         legend = rownames(counts),
-        args.legend = list(x = "topleft", bty = "n"))
+        args.legend = list(x = "topright", bty = "n"))
 
 rm(counts)
 ```
@@ -220,7 +220,7 @@ stats_table <- data.frame(
   "Mean_Difference"   = paste(round(t_result$estimate, 1), "min")
 )
 
-knitr::kable(stats_table, align = "c") # Center align the columns
+knitr::kable(stats_table, align = "c", booktabs = TRUE) # Center align the columns
 ```
 
 
@@ -233,6 +233,13 @@ The test yields a **p-value of `r signif(t_result$p.value, 3)`**.
 ### Predictability of Arrival Times
 
 We use **Linear Regression** to assess how accurately the *departure time* predicts the *arrival time*.
+
+$$
+\begin{aligned}
+H_0 &: \text{Slope} = 0 &\text{(Departure time does not predict arrival time)}\\
+H_a &: \text{Slope} \neq 0 &\text{(There is a linear predicitive relationshop)}
+\end{aligned}
+$$
 
 ```{r prep-regression, echo = TRUE, results = "hide"}
 # Combine the departure times and arrival times for campus and home trips
@@ -252,7 +259,7 @@ fit
 ```{r display-fit, echo=FALSE}
 coefs <- summary(fit)$coefficients
 rownames(coefs) <- c("Intercept (Unix Epoch)", "Departure Time")
-knitr::kable(coefs, digits = 4)
+knitr::kable(coefs, digits = 4, booktabs = TRUE)
 rm(coefs)
 ```
 
@@ -264,6 +271,8 @@ $$
 $$
 
 Validating this model against the data reveals:
+
+- **Decision:** Since the slope is not zero, we **reject the null hypothesis**. Arrival time is dependent on departure time.
 
 - **Intercept ($A$):** Omitted since `POSIXct` data is stored as seconds since 1970. It holds no practical meaning for this daily commute analysis.
 
@@ -314,3 +323,94 @@ abline(fit, col = "black", lwd = 2)
 # Remove them to keep the environment clean
 rm(all_dep, all_arr, dep_time, arr_time, point_colors)
 ```
+
+### Impact of Rain on Crowding
+
+We apply **Fisher's Exact Test** to determine if rainy weather significantly increases the odds of the UniLink bus being overcrowded. Fisher's test compares the Odds Ratio ($OR$). An odds ratio of 1 means the events are independent. Since we are testing if rain increases crowding, the alternative is "greater than 1."
+
+$$
+\begin{aligned}
+H_0 &: OR = 1 &\text{(Rain and Crowding are independent)}\\
+H_a &: OR > 1 &\text{(Rain increases the odds of Crowding)}
+\end{aligned}
+$$
+
+```{r contingency-table, echo = TRUE, results = "hide"}
+contingency_table <- table(bus_data$rain_to_home, bus_data$crowded_unilink_to_home)
+rownames(contingency_table) <- c("Clear Weather", "Raining")
+colnames(contingency_table) <- c("Not Crowded", "Crowded")
+contingency_table
+```
+
+```{r display-contingency-table, echo=FALSE}
+knitr::kable(contingency_table, booktabs = TRUE)
+```
+
+
+```{r fisher-test, echo = TRUE, results = "hide"}
+fisher_result <- fisher.test(contingency_table, alternative = "greater")
+fisher_result
+```
+
+```{r display-fisher-test, echo=FALSE}
+fisher_stats <- data.frame(
+  "Odds_Ratio" = round(fisher_result$estimate, 2),
+  "p_Value"    = format.pval(fisher_result$p.value, digits = 3),
+  row.names    = NULL # Removes row numbers for a cleaner look
+)
+knitr::kable(fisher_stats, booktabs = TRUE, align = "c")
+```
+
+- **Decision:** Since the p-value (`r fisher_stats$p_Value`) is less than 0.05, we **reject the null hypothesis**.
+
+- **Interpretation:** The data indicates that rain significantly impacts commute comfort. The odds ratio suggests that a crowded bus is approximately **`r round(fisher_stats$Odds_Ratio, 1)` times** more likely to occur on a rainy day than on a clear day.
+
+### Testing the "Thursday Rush": Weekday vs. Crowding
+
+To investigate the "Thursday Rush," we perform a **Pearson’s Chi-square Test** to check if bus crowding is dependent on the specific day of the week.
+
+$$
+\begin{aligned}
+H_0 &: p_{Mon} = p_{Wed} = p_{Thu} = p_{Fri} \text{ (Crowding rates are equal across all days)}\\
+H_a &: \text{At least one day has a different crowding rate}
+\end{aligned}
+$$
+
+```{r chi-table, echo = TRUE, results = "hide"}
+# Order days logically (Mon-Fri), not alphabetically
+days <- factor(
+  bus_data$day_of_week,
+  levels = c("Monday", "Wednesday", "Thursday", "Friday") # No Tuesday trips
+  )
+contingency_table_chi <- table(bus_data$crowded_unilink_to_home, days)
+rownames(contingency_table_chi) <- c("Not Crowded", "Crowded")
+contingency_table_chi
+```
+
+```{r display-chi-table, echo=FALSE}
+knitr::kable(contingency_table_chi, booktabs = TRUE)
+rm(days)
+```
+
+```{r chi-test, echo = TRUE, results = "hide"}
+chi_result <- chisq.test(contingency_table_chi, simulate.p.value = TRUE)
+chi_result
+```
+
+```{r display-chi-test, echo=FALSE}
+chi_stats <- data.frame(
+  "Chi_Square" = round(chi_result$statistic, 2),
+  "p_Value"    = format.pval(chi_result$p.value, digits = 3),
+  row.names    = NULL
+)
+knitr::kable(chi_stats, booktabs = TRUE, align = "c")
+```
+
+The analysis yields a p-value of `r signif(chi_result$p.value, 3)`, which is less than $0.05$.
+
+- **Decision:** We **reject the null hypothesis**.
+
+- **Interpretation:** There is significant evidence to support the claim that specific days are inherently more crowded.
+
+
+
