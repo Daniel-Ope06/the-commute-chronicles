@@ -378,7 +378,7 @@ To investigate the "Thursday Rush," we perform a **Pearson’s Chi-square Test**
 
 $$
 \begin{aligned}
-H_0 &: p_{Mon} = p_{Wed} = p_{Thu} = p_{Fri} \text{ (Crowding rates are equal across all days)}\\
+H_0 &: p_{Mon} = p_{Wed} = p_{Thu} = p_{Fri} \quad \text{(Crowding rates are equal across all days)}\\
 H_a &: \text{At least one day has a different crowding rate}
 \end{aligned}
 $$
@@ -421,6 +421,80 @@ rm(chi_stats)
 - **Decision:** Since the p-value (`r signif(chi_result$p.value, 3)`) is less than $0.05$, we **reject the null hypothesis**.
 
 - **Interpretation:** There is significant evidence to support the claim that specific days are inherently more crowded.
+
+### Bayesian Risk Update: The Impact of Rain
+
+Finally, we apply **Bayes's Theorem** to quantify how a rainy weather forecast should update our risk assessment for bus overcrowding.
+
+- Let $H$ be the Hypothesis that **"The Bus is Crowded"**.
+- Let $D$ be the Data that **"It is Raining"**.
+
+$$
+P(H|D) = P(H) \cdot \frac{P(D|H)}{P(H) \cdot P(D|H) + P(\bar H) \cdot P(D|\bar H)}
+$$
+
+
+Where:
+
+- $P(H)$: The *prior* probability that the bus is crowded.
+- $P(H|D)$: The *posterior* probability that the bus is crowded. The probability the bus is crowded given that it is raining.
+- $P(D|H)$: The probability it is raining given that the bus is crowded.
+- $P(D|\bar H)$: The probability it is raining given that the bus is not crowded.
+
+#### Probability Calculation:{.unnumbered}
+
+```{r probability-calculation}
+# The columns are stored as TRUE (1) and FALSE (0)
+# So the mean is the probability of TRUE (1)
+p_H <- mean(bus_data$crowded_unilink_to_home)
+p_not_H <- 1 - p_H
+
+crowded_days <- subset(bus_data, crowded_unilink_to_home == TRUE)
+not_crowded_days <- subset(bus_data, crowded_unilink_to_home == FALSE)
+
+p_D_given_H <- mean(crowded_days$rain_to_home)
+p_D_given_not_H <- mean(not_crowded_days$rain_to_home)
+
+p_posterior <- (p_H * p_D_given_H) / ((p_H * p_D_given_H) + (p_not_H * p_D_given_not_H))
+
+risk_factor <- p_posterior / p_H
+```
+
+- *Prior Probability ($P(H)$):* `r round(p_H * 100, 1)`$\%$.
+- *Posterior Probability ($P(H|D)$):* `r round(p_posterior * 100, 1)`$\%$.
+- Rain acts as a *Risk Multiplier* of `r round(risk_factor, 2)`$\times$.
+
+#### Visualizing the Belief Shift:{.unnumbered}
+
+To visualize this update, we model our belief as a **Beta Distribution**. The *Prior (Blue)* represents our uncertainty before checking the weather, while the *Posterior (Pink)* shows how the presence of rain shifts our expectation toward "Crowded."
+
+```{r beta-distribution, fig.show="hold", out.width="70%", fig.align="center", fig.cap="Beta density plots showing the shift in belief. The Prior (blue dashed) represents the baseline probability of overcrowding across all days. The Posterior (pink solid) shows the updated probability given rainy weather, illustrating a significant increase in the risk of crowding."}
+# We need counts for alpha/beta parameters
+total_trips <- nrow(bus_data)
+crowded_trips <- sum(bus_data$crowded_unilink_to_home) # TRUE is 1, FALSE is 0
+rain_trips <- subset(bus_data, rain_to_home == TRUE)
+crowded_rain <- sum(rain_trips$crowded_unilink_to_home)
+
+alpha_prior <- crowded_trips
+beta_prior <- (total_trips - crowded_trips)
+
+alpha_post <- crowded_rain
+beta_post <- (nrow(rain_trips) - crowded_rain)
+
+# Plotting
+curve(dbeta(x, alpha_post, beta_post), from = 0, to = 1,
+      col = "salmon", lwd = 3, lty = 1,
+      main = "Bayesian Update: Impact of Rain on Crowding Probability",
+      xlab = "Probability of Crowding", ylab = "Density",
+      ylim = c(0, 5)) # To ensure both plots fit vertically
+
+curve(dbeta(x, alpha_prior, beta_prior), add = TRUE, 
+      col = "lightblue", lwd = 3, lty = 2)
+
+legend("topleft", legend = c("Posterior (rain)", "Prior (general)"),
+       col = c("salmon", "lightblue"), lwd = 3, lty = c(1, 2), bty = "n")
+```
+
 
 
 
