@@ -40,7 +40,7 @@ knitr::include_graphics("bus_trip_origin.jpg")
 The dataset for this analysis is a manually logged primary source, detailing each day's trip to campus and back home. The dataset tracks departure and arrival times, duration in minutes, and binary environmental indicators like rain and bus crowding.
 
 ```{r loadData}
-bus_data <- read.csv("bus_trip_data.csv")
+bus_data <- read.csv("bus_trip_data.txt")
 ```
 
 The data has `r ncol(bus_data)` columns and `r nrow(bus_data)` rows. To ensure the table fits within the document margins, a sample of the dataset is displayed below in two parts: the *"To Campus"* details and the *"To Home"* details.
