@@ -27,11 +27,11 @@ knitr::opts_chunk$set(fig.pos="H", fig.showtext = TRUE, out.extra="", dev="cairo
 
 # Introduction
 
-For any university student, time is a limited and valuable resource. However, my geographical situation presents a significant challenge: I spend about four hours each day commuting. This adds up to twenty hours a week in transit (equivalent to a part-time job) and creates a considerable gap in my efficiency. Due to the discomfort of the journey, I cannot effectively use this time for studying, making my commute a "dead zone" in terms of productivity.
+For any university student, time is a limited and valuable resource. However, my geographical situation presents a significant challenge: I spend about four hours each day commuting. This adds up to twenty hours a week in transit (equivalent to a part-time job) and creates a considerable gap in my efficiency. Due to the discomfort of the journey, I cannot effectively use this time for studying, making my commute a dead zone in terms of productivity.
 
 The motivation for this project is to reclaim agency over my travel time. Due to overcrowding, particularly on Thursdays, buses often bypass stops, leaving passengers stranded. I aim to shift from passive waiting to active management by analysing my travel logs to identify patterns, assess the impact of weather on crowding, and deduce actionable insights to optimise my journeys.
 
-```{r bus-trip-origin, echo=FALSE, fig.show="hold", fig.align='center', out.width="90%", fig.cap="Data Collection Source. The composite image shows the physical bus stop (left), the Google Maps route of the journey (center), and the notepad app used to manually log daily trip details (right)."}
+```{r bus-trip-origin, echo=FALSE, fig.show="hold", fig.align='center', out.width="90%", fig.cap="Data Collection Source. The collage shows the physical bus stop (left), the Google Maps route of the journey (centre), and the notepad app used to manually log daily trip details (right)."}
 knitr::include_graphics("bus_trip_origin.jpg")
 ```
 
@@ -41,20 +41,19 @@ The dataset for this analysis is a manually logged primary source, detailing eac
 
 ```{r loadData}
 bus_data <- read.csv("bus_trip_data.csv")
-bus_data$date <- as.Date(bus_data$date) # Convert date column to R Date type
 ```
 
-The data has `r ncol(bus_data)` columns and `r nrow(bus_data)` rows. To ensure the table fits within the document margins, the data set is displayed below in two parts: the *"To Campus"* details and the *"To Home"* details.
+The data has `r ncol(bus_data)` columns and `r nrow(bus_data)` rows. To ensure the table fits within the document margins, a sample of the dataset is displayed below in two parts: the *"To Campus"* details and the *"To Home"* details.
 
 \begin{center}
 ```{r display-table-1, echo=FALSE}
 df_display_1 <- bus_data[ , 1:5]
-knitr::kable(head(df_display_1, 5), booktabs = TRUE)
+knitr::kable(head(df_display_1, 5), align = "c", booktabs = TRUE)
 ```
 
 ```{r display-table-2, echo=FALSE}
 df_display_2 <- bus_data[ , 6:10]
-knitr::kable(head(df_display_2, 5), booktabs = TRUE)
+knitr::kable(head(df_display_2, 5), align = "c", booktabs = TRUE)
 ```
 \end{center}
 
@@ -98,6 +97,9 @@ An examination of the distributional shape (Figure \@ref(fig:histogram-side)) hi
 ```{r scatter-plot-side, echo=FALSE, fig.show="hold", out.width="50%", fig.cap="Scatter plots tracking daily commute durations for trips to campus (left) and return trips to home (right) over the observed period."}
 par(mar = c(4, 4, 1, .1))
 
+# Convert date column to R Date type
+bus_data$date <- as.Date(bus_data$date)
+
 plot(bus_data$date, bus_data$dur_to_campus,
      main = "Commute Duration Over Time To Campus",
      xlab = "Date",
@@ -115,11 +117,11 @@ plot(bus_data$date, bus_data$dur_to_home,
      frame.plot = FALSE)
 ```
 
-Plotting the commute durations over time (Figure \@ref(fig:scatter-plot-side)) highlights a stark contrast in stability between the two journeys:
+Plotting the commute durations over time (Figure \@ref(fig:scatter-plot-side)) highlights a difference in stability between the two journeys:
 
 - Trips to campus appear stable over time, showing only random noise without a noticeable increase or decrease in duration.
 
-- Trips to home exhibit high variance, with widely dispersed data points, suggesting unpredictable delays that warrant further statistical testing.
+- Trips to home exhibit a higher variance, with widely dispersed data points, suggesting unpredictable delays that call for further statistical testing.
 
 ```{r stacked-bar-side, echo=FALSE, fig.show="hold", fig.cap="Stacked bar chart showing the proportion of crowded UniLink buses to home during clear weather versus rain.", out.width="70%", fig.align="center"}
 # 'Rain' on the X-axis and 'Crowded' stacked as the bars
@@ -139,7 +141,7 @@ barplot(counts,
 
 rm(counts)
 ```
-
+\newpage
 An analysis of the interaction between weather and bus capacity (Figure \@ref(fig:stacked-bar-side)) suggests a strong correlation:
 
 - **On clear days**, most of the trips are not crowded.
@@ -148,11 +150,11 @@ An analysis of the interaction between weather and bus capacity (Figure \@ref(fi
 
 ## Statistical Analysis Plan
 
-While the exploratory analysis highlighted potential trends, such as the volatility of the evening commute and the correlation between rain and crowding, visual inspection alone is insufficient to draw firm conclusions. In this section, we define the specific hypotheses derived from our observations and outline the statistical methods selected to test them.
+While the exploratory analysis highlighted potential trends, such as the volatility of the trips back home and the correlation between rain and crowding, visual inspection alone is insufficient to draw firm conclusions. In this section, we define the specific hypotheses derived from our observations and outline the statistical methods selected to test them.
 
 ### Comparing Commute Directions (Paired t-test)
 
-The scatter plot (Figure \@ref(fig:scatter-plot-side)) suggested that the journey home is not only more volatile but potentially longer on average than the morning commute. To confirm this, we analyse the difference in means between the two trips.
+The scatter plot (Figure \@ref(fig:scatter-plot-side)) suggested that the trip back home is not only more volatile but potentially longer on average than the trip to campus. To confirm this, we analyse the difference in means between the two trips.
 
 #### Method Justification:{.unnumbered}
 
@@ -196,7 +198,7 @@ While the previous tests determine if a relationship exists, we use Bayes's Theo
 
 #### Method Justification:{.unnumbered}
 
-This is not a hypothesis test for statistical significance, but a Probability Update. We will calculate the **Prior Probability** ($P(Crowded)$), the baseline chance of a crowded bus on any random day, and compare it to the **Posterior Probability** ($P(Crowded | Rain)$).
+This is not a hypothesis test for statistical significance, but a probability update. We will calculate the **Prior Probability** ($P(Crowded)$), the baseline chance of a crowded bus on any random day, and compare it to the **Posterior Probability** ($P(Crowded | Rain)$).
 
 - If $P(Crowded|Rain) = P(Crowded)$, the events are **Independent** (Rain has no effect).
 
@@ -233,9 +235,7 @@ rm(stats_table)
 ```
 \end{center}
 
-The test yields a **p-value of `r signif(t_result$p.value, 3)`**.
-
-- **Decision:** Since the p-value is **greater** than the significant level ($\alpha = 0.05$), we **fail to reject** the null hypothesis.
+- **Decision:** Since the **p-value** (`r signif(t_result$p.value, 3)`) is greater than the significant level ($\alpha = 0.05$), we **fail to reject the null hypothesis**.
 
 - **Interpretation:** There is **insufficient** evidence to conclude that the trip back home takes significantly longer than the trip to campus.
 
@@ -246,7 +246,7 @@ We use **Linear Regression** to assess how accurately the *departure time* predi
 $$
 \begin{aligned}
 H_0 &: \text{Slope} = 0 &\text{(Departure time does not predict arrival time)}\\
-H_a &: \text{Slope} \neq 0 &\text{(There is a linear predicitive relationshop)}
+H_a &: \text{Slope} \neq 0 &\text{(There is a linear predicitive relationship)}
 \end{aligned}
 $$
 
@@ -378,7 +378,7 @@ rm(fisher_stats)
 
 - **Decision:** Since the p-value (`r format.pval(fisher_result$p.value, digits = 3)`) is less than 0.05, we **reject the null hypothesis**.
 
-- **Interpretation:** The data indicates that rain significantly impacts commute comfort. The odds ratio suggests that a crowded bus is approximately **`r round(fisher_result$estimate, 1)` times** more likely to occur on a rainy day than on a clear day.
+- **Interpretation:** The data indicates that rain significantly impacts commute comfort. The odds ratio suggests that a crowded bus is approximately **`r round(fisher_result$estimate)` times** more likely to occur on a rainy day than on a clear day.
 
 ### Testing the "Thursday Rush"
 
@@ -426,7 +426,7 @@ rm(chi_stats)
 ```
 \end{center}
 
-- **Decision:** Since the p-value (`r signif(chi_result$p.value, 3)`) is less than $0.05$, we **reject the null hypothesis**.
+- **Decision:** Since the p-value (`r signif(chi_result$p.value, 3)`) is less than 0.05, we **reject the null hypothesis**.
 
 - **Interpretation:** There is significant evidence to support the claim that specific days are inherently more crowded.
 
@@ -499,13 +499,13 @@ curve(dbeta(x, alpha_post, beta_post), from = 0, to = 1,
 curve(dbeta(x, alpha_prior, beta_prior), add = TRUE, 
       col = "lightblue", lwd = 3, lty = 2)
 
-legend("topleft", legend = c("Posterior (rain)", "Prior (general)"),
+legend("topright", legend = c("Posterior (rain)", "Prior (general)"),
        col = c("salmon", "lightblue"), lwd = 3, lty = c(1, 2), bty = "n")
 ```
 
 # Conclusion
 
-This project set out to analyse the reliability and comfort of my school commute using a data-driven approach. By applying a statistical tests to personal bus logs, we have moved beyond anecdotal evidence to identify distinct patterns in travel efficiency and bus overcrowding.
+This project set out to analyse the reliability and comfort of my daily commute to and from campus using a data-driven approach. By applying statistical tests to personal bus logs, we have moved beyond anecdotal evidence to identify distinct patterns in travel efficiency and bus overcrowding.
 
 ## Summary of Statistical Findings
 
@@ -516,10 +516,10 @@ The following table summarizes the core hypotheses tested and the conclusions dr
 | **Research Question** | **Method** | **Key Result** |
 |:---|:---:|:---|
 | **Is the journey home longer than the journey to campus?** | Paired t-test | **No.** Both trips take similar times. |
-| **Can we accurately predict arrival time based on departure?** | Linear Regression | **Yes.** A strong linear relationship exists ($R^2 \approx 0.996$), but random traffic noise creates a residual error of $\pm 15$ minutes regardless of departure time. |
-| **Does rain lead to overcrowding?** | Fisher's Exact Test | **Yes.** Rain is a significant predictor of crowding. The odds of a full bus increase dramatically during adverse weather. |
+| **Can we accurately predict arrival time based on departure?** | Linear Regression | **Yes.** A strong linear relationship exists ($R^2 \approx$ `r round(summary(fit)$r.squared, 3)`), but random traffic noise creates a residual error of $\pm$ `r round(summary(fit)$sigma / 60, 1)` minutes regardless of departure time. |
+| **Does rain lead to overcrowding?** | Fisher's Exact Test | **Yes.** Rain is a significant predictor of crowding. The odds of a full bus increase dramatically (`r round(fisher_result$estimate)`$\times$) during adverse weather. |
 | **Is overcrowding random across the week?** | Pearson's Chi-Square | **No.** Crowding is systematic and dependent on the day. Thursdays showed a disproportionate frequency of crowded trips compared to the rest of the week. |
-| **How much should I worry about rain?** | Bayes's Theorem | **Double the Risk.** The presence of rain acts as a risk multiplier ($1.92\times$), shifting the probability of a crowded bus from a baseline ($0.4$) to a near-certainty ($0.77$). |
+| **How much should I worry about rain?** | Bayes's Theorem | **Double the Risk.** The presence of rain acts as a risk multiplier (`r round(risk_factor, 2)`$\times$), shifting the probability of a crowded bus from a baseline (`r round(p_H * 100, 1)`$\%$) to a near-certainty (`r round(p_posterior * 100, 1)`$\%$). |
 \endgroup
 
 ## Limitations and Areas for Concern
@@ -532,7 +532,7 @@ While the analysis reveals clear trends, several limitations should be considere
 
 - **Seasonality:** Data was collected over a single semester. Seasonal changes (winter darkness, exam periods) may alter these patterns, meaning the regression model may need re-calibration for future months.
 
-- **Binary Definition of "Crowded":** The variable `crowded_unilink_to_home` is subjective (`TRUE`/`FALSE`). A more granular metric (e.g., "Seats Available") would allow for more detailed analysis.
+- **Binary Definition of "Crowded":** The variable `crowded_unilink_to_home` is subjective (`TRUE`/`FALSE`). A more detailed metric (e.g., "Seats Available") would allow for deeper analysis.
 
 ## Final Thoughts
 
