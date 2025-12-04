@@ -32,7 +32,7 @@ For any university student, time is a limited and valuable resource. However, my
 The motivation for this project is to reclaim agency over my travel time. Due to overcrowding, particularly on Thursdays, buses often bypass stops, leaving passengers stranded. I aim to shift from passive waiting to active management by analysing my travel logs to identify patterns, assess the impact of weather on crowding, and deduce actionable insights to optimise my journeys.
 
 ```{r bus-trip-origin, echo=FALSE, fig.show="hold", fig.align='center', out.width="90%", fig.cap="Data Collection Source. The collage shows the physical bus stop (left), the Google Maps route of the journey (centre), and the notepad app used to manually log daily trip details (right)."}
-knitr::include_graphics("bus_trip_origin.jpg")
+knitr::include_graphics("bus_data_origin.jpg")
 ```
 
 ## Dataset Description
@@ -40,7 +40,7 @@ knitr::include_graphics("bus_trip_origin.jpg")
 The dataset for this analysis is a manually logged primary source, detailing each day's trip to campus and back home. The dataset tracks departure and arrival times, duration in minutes, and binary environmental indicators like rain and bus crowding.
 
 ```{r loadData}
-bus_data <- read.csv("bus_trip_data.txt")
+bus_data <- read.csv("bus_data.txt")
 ```
 
 The data has `r ncol(bus_data)` columns and `r nrow(bus_data)` rows. To ensure the table fits within the document margins, a sample of the dataset is displayed below in two parts: the *"To Campus"* details and the *"To Home"* details.
@@ -66,7 +66,7 @@ rm(df_display_1, df_display_2)
 
 ## Exploratory Data Analysis
 
-Before running any complex statistical tests, we visualize the raw data to understand its shape. We are looking for two things: the **distribution** of the data (e.g. is it bell-shaped?) and any **trends** over time (e.g. is traffic getting worse?).
+Before running any statistical tests, we visualize the data to understand its shape or spot any patterns.
 
 ```{r histogram-side, echo=FALSE, fig.show="hold", out.width="50%", fig.cap="Histograms displaying the distribution of travel times for trips to campus (left) and trips to home (right) with 10-minute bin intervals."}
 par(mar = c(4, 4, 1, .1))
@@ -117,7 +117,7 @@ plot(bus_data$date, bus_data$dur_to_home,
      frame.plot = FALSE)
 ```
 
-Plotting the commute durations over time (Figure \@ref(fig:scatter-plot-side)) highlights a difference in stability between the two journeys:
+Plotting the commute durations over time (Figure \@ref(fig:scatter-plot-side)) highlights a difference in *volatility* between the two journeys:
 
 - Trips to campus appear stable over time, showing only random noise without a noticeable increase or decrease in duration.
 
@@ -160,9 +160,9 @@ The scatter plot (Figure \@ref(fig:scatter-plot-side)) suggested that the trip b
 
 Since each day (or record) consists of a trip to campus and a trip to home, a paired student t-test is the appropriate method to control for day-specific variance (e.g., a generally traffic-heavy day affecting both trips). We use a *one-sided* test because the journey home is expected to take longer, as it typically occurs later in the day when more people are outside.
 
-- $H_0$ (Null): There is no significant difference in mean duration between the trip to campus and the trip home ($\mu_{campus} = \mu_{home}$).
+- $H_0$ (Null): There is no difference in mean duration between the trips to campus and the trips home ($\mu_{campus} = \mu_{home}$).
 
-- $H_a$ (Alternative): The trip home takes significantly longer than the trip to campus ($\mu_{home} > \mu_{campus}$).
+- $H_a$ (Alternative): The trips home take longer than the trips to campus ($\mu_{home} > \mu_{campus}$).
 
 ### Predictability of Arrival Times (Linear Regression)
 
@@ -182,7 +182,7 @@ We are analyzing two categorical, binary variables (`rain_to_home` vs. `crowded_
 
 - $H_0$ (Null): Weather conditions and bus crowding are independent.
 
-- $H_a$ (Alternative): Rainy weather significantly increases the likelihood of the bus being crowded.
+- $H_a$ (Alternative): Rainy weather increases the likelihood of the bus being crowded.
 
 ### Weekday Crowding Variance (Pearson's Chi-Square)
 
@@ -190,7 +190,7 @@ We investigate the specific phenomenon of the *"Thursday Rush."* Personal experi
 
 #### Method Justification:{.unnumbered}
 
-We examine the frequency of crowded buses across the distinct days of the week. Pearson’s Chi-square Test is chosen to determine if the distribution of crowded trips differs significantly from what we would expect by chance. Unlike Fisher's Exact Test (which we used for a $2 \times 2$ comparison), Chi-square is ideal for this $2 \times 4$ matrix (Crowded/Not Crowded vs. Mon/Wed/Thu/Fri).
+We examine the frequency of crowded buses across the distinct days of the week. Pearson’s Chi-square Test is chosen to determine if the distribution of crowded trips differs from what we would expect by chance. Unlike Fisher's Exact Test (which we used for a $2 \times 2$ comparison), Chi-square is ideal for this $2 \times 4$ matrix (Crowded/Not Crowded vs. Mon/Wed/Thu/Fri).
 
 ### Conditional Probability of Events: Rain vs. Crowding (Bayes's Theorem)
 
@@ -208,7 +208,7 @@ This is not a hypothesis test for statistical significance, but a probability up
 
 ### Difference in Commute Durations
 
-To determine if the journey home is statistically longer than the journey to campus, we perform a **paired t-test**. This controls for day-specific traffic conditions by comparing the two specific trips made on each date.
+To determine if the journey home is indeed longer than the journey to campus, we perform a **paired t-test**. This controls for day-specific traffic conditions by comparing the two specific trips made on each date.
 
 $$
 \begin{aligned}
@@ -230,14 +230,14 @@ stats_table <- data.frame(
   "p_Value"     = format.pval(t_result$p.value, digits = 3),
   "Mean_Difference"   = paste(round(t_result$estimate, 1), "min")
 )
-knitr::kable(stats_table, align = "c", booktabs = TRUE) # Center align the columns
+knitr::kable(stats_table, align = "c", booktabs = TRUE)
 rm(stats_table)
 ```
 \end{center}
 
-- **Decision:** Since the **p-value** (`r signif(t_result$p.value, 3)`) is greater than the significant level ($\alpha = 0.05$), we **fail to reject the null hypothesis**.
+- **Decision:** Since the **p-value** (`r signif(t_result$p.value, 3)`) is greater than the significance level ($\alpha = 0.05$), we **fail to reject the null hypothesis**.
 
-- **Interpretation:** There is **insufficient** evidence to conclude that the trip back home takes significantly longer than the trip to campus.
+- **Interpretation:** There is **insufficient** evidence to conclude that the trip back home takes longer than the trip to campus.
 
 ### Predictability of Arrival Times
 
@@ -335,7 +335,7 @@ rm(all_dep, all_arr, dep_time, arr_time, point_colors)
 
 ### Impact of Rain on Crowding
 
-We apply **Fisher's Exact Test** to determine if rainy weather significantly increases the odds of the UniLink bus being overcrowded. Fisher's test compares the Odds Ratio ($OR$). An odds ratio of 1 means the events are independent. Since we are testing if rain increases crowding, the alternative is "greater than 1."
+We apply **Fisher's Exact Test** to determine if rainy weather increases the odds of the UniLink bus being overcrowded. Fisher's test compares the Odds Ratio ($OR$). An odds ratio of 1 means the events are independent. Since we are testing if rain increases crowding, the alternative is "greater than 1."
 
 $$
 \begin{aligned}
@@ -378,7 +378,7 @@ rm(fisher_stats)
 
 - **Decision:** Since the p-value (`r format.pval(fisher_result$p.value, digits = 3)`) is less than 0.05, we **reject the null hypothesis**.
 
-- **Interpretation:** The data indicates that rain significantly impacts commute comfort. The odds ratio suggests that a crowded bus is approximately **`r round(fisher_result$estimate)` times** more likely to occur on a rainy day than on a clear day.
+- **Interpretation:** The data indicates that rain impacts commute comfort. The odds ratio suggests that a crowded bus is approximately **`r round(fisher_result$estimate)` times** more likely to occur on a rainy day than on a clear day.
 
 ### Testing the "Thursday Rush"
 
@@ -428,7 +428,7 @@ rm(chi_stats)
 
 - **Decision:** Since the p-value (`r signif(chi_result$p.value, 3)`) is less than 0.05, we **reject the null hypothesis**.
 
-- **Interpretation:** There is significant evidence to support the claim that specific days are inherently more crowded.
+- **Interpretation:** There is **sufficient** evidence to support the claim that specific days are inherently more crowded.
 
 ### Bayesian Risk Update: The Impact of Rain
 
@@ -476,7 +476,7 @@ risk_factor <- p_posterior / p_H
 
 To visualize this update, we model our belief as a **Beta Distribution**. The *Prior (Blue)* represents our uncertainty before checking the weather, while the *Posterior (Pink)* shows how the presence of rain shifts our expectation toward "Crowded."
 
-```{r beta-distribution, fig.show="hold", out.width="70%", fig.align="center", fig.cap="Beta distribution plots showing the shift in belief. The Prior (blue dashed) represents the baseline probability of overcrowding across all days. The Posterior (pink solid) shows the updated probability given rainy weather, illustrating a significant increase in the risk of crowding."}
+```{r beta-distribution, fig.show="hold", out.width="70%", fig.align="center", fig.cap="Beta distribution plots showing the shift in belief. The Prior (blue dashed) represents the baseline probability of overcrowding across all days. The Posterior (pink solid) shows the updated probability given rainy weather, illustrating an increase in the risk of crowding."}
 # We need counts for alpha/beta parameters
 total_trips <- nrow(bus_data)
 crowded_trips <- sum(bus_data$crowded_unilink_to_home) # TRUE is 1, FALSE is 0
@@ -517,7 +517,7 @@ The following table summarizes the core hypotheses tested and the conclusions dr
 |:---|:---:|:---|
 | **Is the journey home longer than the journey to campus?** | Paired t-test | **No.** Both trips take similar times. |
 | **Can we accurately predict arrival time based on departure?** | Linear Regression | **Yes.** A strong linear relationship exists ($R^2 \approx$ `r round(summary(fit)$r.squared, 3)`), but random traffic noise creates a residual error of $\pm$ `r round(summary(fit)$sigma / 60, 1)` minutes regardless of departure time. |
-| **Does rain lead to overcrowding?** | Fisher's Exact Test | **Yes.** Rain is a significant predictor of crowding. The odds of a full bus increase dramatically (`r round(fisher_result$estimate)`$\times$) during adverse weather. |
+| **Does rain lead to overcrowding?** | Fisher's Exact Test | **Yes.** Rain is a predictor of crowding. The odds of a full bus increase dramatically (`r round(fisher_result$estimate)`$\times$) during adverse weather. |
 | **Is overcrowding random across the week?** | Pearson's Chi-Square | **No.** Crowding is systematic and dependent on the day. Thursdays showed a disproportionate frequency of crowded trips compared to the rest of the week. |
 | **How much should I worry about rain?** | Bayes's Theorem | **Double the Risk.** The presence of rain acts as a risk multiplier (`r round(risk_factor, 2)`$\times$), shifting the probability of a crowded bus from a baseline (`r round(p_H * 100, 1)`$\%$) to a near-certainty (`r round(p_posterior * 100, 1)`$\%$). |
 \endgroup
