@@ -545,3 +545,13 @@ For the remainder of the semester:
 - Treat a rainy forecast as a signal to prepare for a crowded journey.
 
 This project demonstrates that even small, personal datasets can provide actionable insights when we analyze them carefully with statistics.
+
+\vfill
+\begin{center}
+\footnotesize
+\textit{
+  Project repository and commit history available at:
+  \href{https://github.com/Daniel-Ope06/the-commute-chronicles}{github.com/Daniel-Ope06/the-commute-chronicles}
+}
+\end{center}
+
